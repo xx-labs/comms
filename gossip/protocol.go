@@ -265,6 +265,7 @@ func (p *Protocol) RemoveGossipPeer(id *id.ID) error {
 
 // Builds and sends a GossipMsg
 func (p *Protocol) Gossip(msg *GossipMsg) (int, []error) {
+	isLeader := false
 	// Set the timestamp if this is the original node
 	if msg.Timestamp == 0 {
 		msg.Timestamp = time.Now().UnixNano()
@@ -273,6 +274,11 @@ func (p *Protocol) Gossip(msg *GossipMsg) (int, []error) {
 		if !p.flags.SelfGossip {
 			p.setFingerprintUnsafe(GetFingerprint(msg))
 		}
+		isLeader = true
+	}
+
+	if isLeader{
+		jww.INFO.Printf("GOSSIPBUG - Handled gossip entree conditions")
 	}
 
 	// Internal helper to send the input gossip msg to a given id
@@ -296,10 +302,18 @@ func (p *Protocol) Gossip(msg *GossipMsg) (int, []error) {
 		return nil
 	}
 
+	if isLeader{
+		jww.INFO.Printf("GOSSIPBUG - getting peers to gossip round")
+	}
+
 	// Get list of peers to send message to
 	peers, err := p.getPeers()
 	if err != nil {
 		return 0, []error{errors.WithMessage(err, "Failed to get peers for sending")}
+	}
+
+	if isLeader{
+		jww.INFO.Printf("GOSSIPBUG - doing sends to gossip: buffLer: %d", len(p.sendWorkers))
 	}
 
 	// Send message to each peer
@@ -316,8 +330,16 @@ func (p *Protocol) Gossip(msg *GossipMsg) (int, []error) {
 		}
 	}
 
+	if isLeader{
+		jww.INFO.Printf("GOSSIPBUG - waiting for sends to gossip round")
+	}
+
 	// wait for sends to complete
 	wg.Wait()
+
+	if isLeader{
+		jww.INFO.Printf("GOSSIPBUG - getting errors for gossiping round")
+	}
 
 	// get any errors
 	done := false

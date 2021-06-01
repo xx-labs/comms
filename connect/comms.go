@@ -157,7 +157,12 @@ listen:
 			grpc.MaxConcurrentStreams(MaxConcurrentStreams),
 			grpc.MaxRecvMsgSize(math.MaxInt32),
 			grpc.KeepaliveParams(KaOpts),
-			grpc.KeepaliveEnforcementPolicy(KaEnforcement))
+			grpc.KeepaliveEnforcementPolicy(KaEnforcement),
+			grpc.InitialConnWindowSize(MaxWindowSize),
+			grpc.InitialWindowSize(MaxWindowSize),
+			grpc.ReadBufferSize(4*1024*1024),
+			grpc.WriteBufferSize(4*1024*1024),
+		)
 	} else {
 		// Create the gRPC server without TLS
 		jww.WARN.Printf("Starting server with TLS disabled...")

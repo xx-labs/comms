@@ -431,8 +431,8 @@ func (h *Host) connectHelper() (err error) {
 						numRetries, h.GetAddress())
 				}
 				cancel()
-				wg.Done()
 			}
+			wg.Done()
 		}()
 	}
 

@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 	"math"
+	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -33,6 +34,7 @@ import (
 )
 
 const infinityTime = time.Duration(math.MaxInt64)
+const numConnections = 500
 
 //4 MB
 const MaxWindowSize = math.MaxInt32
@@ -68,7 +70,7 @@ type Host struct {
 	transmissionToken *token.Live
 
 	// GRPC connection object
-	connection      *grpc.ClientConn
+	connections     []*grpc.ClientConn
 	connectionCount uint64
 
 	// TLS credentials object used to establish the connection
@@ -115,6 +117,7 @@ func NewHost(id *id.ID, address string, cert []byte, params HostParams) (host *H
 		metrics:           newMetric(),
 		params:            params,
 		windowSize:        &windowSize,
+		connections:       make([]*grpc.ClientConn, numConnections),
 	}
 
 	if params.EnableCoolOff {
@@ -294,11 +297,11 @@ func (h *Host) transmit(f func(conn *grpc.ClientConn) (interface{},
 	defer h.connectionMux.RUnlock()
 
 	// Check if connection is down
-	if h.connection == nil {
+	if h.connections[0] == nil {
 		return nil, errors.New("Failed to transmit: host disconnected")
 	}
-
-	a, err := f(h.connection)
+	connecionToUse := rand.Uint64() % numConnections
+	a, err := f(h.connections[connecionToUse])
 
 	if h.params.EnableMetrics && err != nil {
 		// Checks if the received error is a among excluded errors
@@ -333,10 +336,10 @@ func (h *Host) authenticationRequired() bool {
 
 // isAlive returns true if the connection is non-nil and alive
 func (h *Host) isAlive() bool {
-	if h.connection == nil {
+	if h.connections[0] == nil {
 		return false
 	}
-	state := h.connection.GetState()
+	state := h.connections[0].GetState()
 	return state == connectivity.Idle || state == connectivity.Connecting ||
 		state == connectivity.Ready
 }
@@ -347,14 +350,17 @@ func (h *Host) disconnect() {
 	// its possible to close a host which never sent so it never made a
 	// connection. In that case, we should not close a connection which does not
 	// exist
-	if h.connection != nil {
-		err := h.connection.Close()
-		if err != nil {
-			jww.ERROR.Printf("Unable to close connection to %s: %+v",
-				h.GetAddress(), errors.New(err.Error()))
-		} else {
-			h.connection = nil
+	if h.connections[0] != nil {
+		for i := 0; i > numConnections; i++ {
+			err := h.connections[i].Close()
+			if err != nil {
+				jww.ERROR.Printf("Unable to close connection to %s: %+v",
+					h.GetAddress(), errors.New(err.Error()))
+			} else {
+				h.connections[i] = nil
+			}
 		}
+
 	}
 	h.transmissionToken.Clear()
 }
@@ -363,62 +369,73 @@ func (h *Host) disconnect() {
 // undefined behavior if the caller has not taken the write lock
 func (h *Host) connectHelper() (err error) {
 
-	// Configure TLS options
-	var securityDial grpc.DialOption
-	if h.credentials != nil {
-		// Create the gRPC client with TLS
-		securityDial = grpc.WithTransportCredentials(h.credentials)
-	} else {
-		// Create the gRPC client without TLS
-		jww.WARN.Printf("Connecting to %v without TLS!", h.GetAddress())
-		securityDial = grpc.WithInsecure()
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < numConnections; i++ {
+		localI := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// Configure TLS options
+			var securityDial grpc.DialOption
+			if h.credentials != nil {
+				// Create the gRPC client with TLS
+				securityDial = grpc.WithTransportCredentials(h.credentials)
+			} else {
+				// Create the gRPC client without TLS
+				jww.WARN.Printf("Connecting to %v without TLS!", h.GetAddress())
+				securityDial = grpc.WithInsecure()
+			}
+
+			jww.DEBUG.Printf("Attempting to establish connection to %s using"+
+				" credentials: %+v", h.GetAddress(), securityDial)
+
+			// Attempt to establish a new connection
+			var numRetries uint32
+			//todo-remove this retry block when grpc is updated
+			for numRetries = 0; numRetries < h.params.MaxRetries && !h.isAlive(); numRetries++ {
+				h.disconnect()
+
+				jww.DEBUG.Printf("Connecting to %+v Attempt number %+v of %+v",
+					h.GetAddress(), numRetries, h.params.MaxRetries)
+
+				// If timeout is enabled, the max wait time becomes
+				// ~14 seconds (with maxRetries=100)
+				backoffTime := 2000 * (numRetries/16 + 1)
+				if backoffTime > 15000 {
+					backoffTime = 15000
+				}
+				ctx, cancel := newContext(time.Duration(backoffTime) * time.Millisecond)
+
+				dialOpts := []grpc.DialOption{
+					grpc.WithBlock(),
+					grpc.WithKeepaliveParams(KaClientOpts),
+					securityDial,
+					// 4MiB
+					grpc.WithReadBufferSize(4 * 1024 * 1024),
+					grpc.WithWriteBufferSize(4 * 1024 * 1024),
+				}
+
+				windowSize := atomic.LoadInt32(h.windowSize)
+				if windowSize != 0 {
+					dialOpts = append(dialOpts, grpc.WithInitialWindowSize(windowSize))
+					dialOpts = append(dialOpts, grpc.WithInitialConnWindowSize(windowSize))
+				}
+
+				// Create the connection
+				h.connections[localI], err = grpc.DialContext(ctx, h.GetAddress(),
+					dialOpts...)
+
+				if err != nil {
+					jww.DEBUG.Printf("Attempt number %+v to connect to %s failed\n",
+						numRetries, h.GetAddress())
+				}
+				cancel()
+			}
+		}()
 	}
 
-	jww.DEBUG.Printf("Attempting to establish connection to %s using"+
-		" credentials: %+v", h.GetAddress(), securityDial)
-
-	// Attempt to establish a new connection
-	var numRetries uint32
-	//todo-remove this retry block when grpc is updated
-	for numRetries = 0; numRetries < h.params.MaxRetries && !h.isAlive(); numRetries++ {
-		h.disconnect()
-
-		jww.DEBUG.Printf("Connecting to %+v Attempt number %+v of %+v",
-			h.GetAddress(), numRetries, h.params.MaxRetries)
-
-		// If timeout is enabled, the max wait time becomes
-		// ~14 seconds (with maxRetries=100)
-		backoffTime := 2000 * (numRetries/16 + 1)
-		if backoffTime > 15000 {
-			backoffTime = 15000
-		}
-		ctx, cancel := newContext(time.Duration(backoffTime) * time.Millisecond)
-
-		dialOpts := []grpc.DialOption{
-			grpc.WithBlock(),
-			grpc.WithKeepaliveParams(KaClientOpts),
-			securityDial,
-			// 4MiB
-			grpc.WithReadBufferSize(4 * 1024 * 1024),
-			grpc.WithWriteBufferSize(4 * 1024 * 1024),
-		}
-
-		windowSize := atomic.LoadInt32(h.windowSize)
-		if windowSize != 0 {
-			dialOpts = append(dialOpts, grpc.WithInitialWindowSize(windowSize))
-			dialOpts = append(dialOpts, grpc.WithInitialConnWindowSize(windowSize))
-		}
-
-		// Create the connection
-		h.connection, err = grpc.DialContext(ctx, h.GetAddress(),
-			dialOpts...)
-
-		if err != nil {
-			jww.DEBUG.Printf("Attempt number %+v to connect to %s failed\n",
-				numRetries, h.GetAddress())
-		}
-		cancel()
-	}
+	wg.Wait()
 
 	// Verify that the connection was established successfully
 	if !h.isAlive() {

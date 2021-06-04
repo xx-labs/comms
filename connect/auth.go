@@ -25,6 +25,7 @@ import (
 	"gitlab.com/xx_network/crypto/xx"
 	"gitlab.com/xx_network/primitives/id"
 	"google.golang.org/grpc/metadata"
+	badrand "math/rand"
 )
 
 // Auth represents an authorization state for a message or host
@@ -42,8 +43,10 @@ type Auth struct {
 // send lock taken in ProtoComms.transmit()
 func (c *ProtoComms) clientHandshake(host *Host) (err error) {
 
+	connectionToUse := badrand.Uint64() % numConnections
+
 	// Set up the context
-	client := pb.NewGenericClient(host.connection)
+	client := pb.NewGenericClient(host.connections[connectionToUse])
 	ctx, cancel := host.GetMessagingContext()
 	defer cancel()
 

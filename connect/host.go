@@ -45,7 +45,7 @@ var KaClientOpts = keepalive.ClientParameters{
 	// Never ping to keepalive
 	Time: infinityTime,
 	// 60s after ping before closing
-	Timeout: 60 * time.Second,
+	Timeout: 60 * time.Minute,
 	// For all connections, with and without streaming
 	PermitWithoutStream: true,
 }

@@ -362,80 +362,72 @@ func (h *Host) disconnect() {
 		}
 
 	}
-	h.transmissionToken.Clear()
+	//h.transmissionToken.Clear()
 }
 
 // connectHelper creates a connection while not under a write lock.
 // undefined behavior if the caller has not taken the write lock
 func (h *Host) connectHelper() (err error) {
 
-	wg := sync.WaitGroup{}
-
 	for i := 0; i < numConnections; i++ {
 		localI := i
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			// Configure TLS options
-			var securityDial grpc.DialOption
-			if h.credentials != nil {
-				// Create the gRPC client with TLS
-				securityDial = grpc.WithTransportCredentials(h.credentials)
-			} else {
-				// Create the gRPC client without TLS
-				jww.WARN.Printf("Connecting to %v without TLS!", h.GetAddress())
-				securityDial = grpc.WithInsecure()
+		// Configure TLS options
+		var securityDial grpc.DialOption
+		if h.credentials != nil {
+			// Create the gRPC client with TLS
+			securityDial = grpc.WithTransportCredentials(h.credentials)
+		} else {
+			// Create the gRPC client without TLS
+			jww.WARN.Printf("Connecting to %v without TLS!", h.GetAddress())
+			securityDial = grpc.WithInsecure()
+		}
+
+		jww.DEBUG.Printf("Attempting to establish connection to %s using"+
+			" credentials: %+v", h.GetAddress(), securityDial)
+
+		// Attempt to establish a new connection
+		var numRetries uint32
+		//todo-remove this retry block when grpc is updated
+		for numRetries = 0; numRetries < h.params.MaxRetries && !h.isAlive(); numRetries++ {
+			h.disconnect()
+
+			jww.DEBUG.Printf("Connecting to %+v Attempt number %+v of %+v",
+				h.GetAddress(), numRetries, h.params.MaxRetries)
+
+			// If timeout is enabled, the max wait time becomes
+			// ~14 seconds (with maxRetries=100)
+			backoffTime := 2000 * (numRetries/16 + 1)
+			if backoffTime > 15000 {
+				backoffTime = 15000
+			}
+			ctx, cancel := newContext(time.Duration(backoffTime) * time.Millisecond)
+
+			dialOpts := []grpc.DialOption{
+				grpc.WithBlock(),
+				grpc.WithKeepaliveParams(KaClientOpts),
+				securityDial,
+				// 4MiB
+				grpc.WithReadBufferSize(4 * 1024 * 1024),
+				grpc.WithWriteBufferSize(4 * 1024 * 1024),
 			}
 
-			jww.DEBUG.Printf("Attempting to establish connection to %s using"+
-				" credentials: %+v", h.GetAddress(), securityDial)
-
-			// Attempt to establish a new connection
-			var numRetries uint32
-			//todo-remove this retry block when grpc is updated
-			for numRetries = 0; numRetries < h.params.MaxRetries && !h.isAlive(); numRetries++ {
-				h.disconnect()
-
-				jww.DEBUG.Printf("Connecting to %+v Attempt number %+v of %+v",
-					h.GetAddress(), numRetries, h.params.MaxRetries)
-
-				// If timeout is enabled, the max wait time becomes
-				// ~14 seconds (with maxRetries=100)
-				backoffTime := 2000 * (numRetries/16 + 1)
-				if backoffTime > 15000 {
-					backoffTime = 15000
-				}
-				ctx, cancel := newContext(time.Duration(backoffTime) * time.Millisecond)
-
-				dialOpts := []grpc.DialOption{
-					grpc.WithBlock(),
-					grpc.WithKeepaliveParams(KaClientOpts),
-					securityDial,
-					// 4MiB
-					grpc.WithReadBufferSize(4 * 1024 * 1024),
-					grpc.WithWriteBufferSize(4 * 1024 * 1024),
-				}
-
-				windowSize := atomic.LoadInt32(h.windowSize)
-				if windowSize != 0 {
-					dialOpts = append(dialOpts, grpc.WithInitialWindowSize(windowSize))
-					dialOpts = append(dialOpts, grpc.WithInitialConnWindowSize(windowSize))
-				}
-
-				// Create the connection
-				h.connections[localI], err = grpc.DialContext(ctx, h.GetAddress(),
-					dialOpts...)
-
-				if err != nil {
-					jww.DEBUG.Printf("Attempt number %+v to connect to %s failed\n",
-						numRetries, h.GetAddress())
-				}
-				cancel()
+			windowSize := atomic.LoadInt32(h.windowSize)
+			if windowSize != 0 {
+				dialOpts = append(dialOpts, grpc.WithInitialWindowSize(windowSize))
+				dialOpts = append(dialOpts, grpc.WithInitialConnWindowSize(windowSize))
 			}
-		}()
+
+			// Create the connection
+			h.connections[localI], err = grpc.DialContext(ctx, h.GetAddress(),
+				dialOpts...)
+
+			if err != nil {
+				jww.DEBUG.Printf("Attempt number %+v to connect to %s failed\n",
+					numRetries, h.GetAddress())
+			}
+			cancel()
+		}
 	}
-
-	wg.Wait()
 
 	// Verify that the connection was established successfully
 	if !h.isAlive() {

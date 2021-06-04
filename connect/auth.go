@@ -43,7 +43,7 @@ type Auth struct {
 // send lock taken in ProtoComms.transmit()
 func (c *ProtoComms) clientHandshake(host *Host) (err error) {
 
-	connectionToUse := badrand.Uint64() % numConnections
+	connectionToUse := badrand.Uint64() % uint64(NumConnections)
 
 	// Set up the context
 	client := pb.NewGenericClient(host.connections[connectionToUse])

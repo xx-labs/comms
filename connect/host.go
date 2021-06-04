@@ -34,7 +34,8 @@ import (
 )
 
 const infinityTime = time.Duration(math.MaxInt64)
-const numConnections = 100
+
+var NumConnections = 5
 
 //4 MB
 const MaxWindowSize = math.MaxInt32
@@ -117,7 +118,7 @@ func NewHost(id *id.ID, address string, cert []byte, params HostParams) (host *H
 		metrics:           newMetric(),
 		params:            params,
 		windowSize:        &windowSize,
-		connections:       make([]*grpc.ClientConn, numConnections),
+		connections:       make([]*grpc.ClientConn, NumConnections),
 	}
 
 	if params.EnableCoolOff {
@@ -300,7 +301,7 @@ func (h *Host) transmit(f func(conn *grpc.ClientConn) (interface{},
 	if h.connections[0] == nil {
 		return nil, errors.New("Failed to transmit: host disconnected")
 	}
-	connecionToUse := rand.Uint64() % numConnections
+	connecionToUse := rand.Uint64() % uint64(NumConnections)
 	a, err := f(h.connections[connecionToUse])
 
 	if h.params.EnableMetrics && err != nil {
@@ -351,7 +352,7 @@ func (h *Host) disconnect() {
 	// connection. In that case, we should not close a connection which does not
 	// exist
 	if h.connections[0] != nil {
-		for i := 0; i > numConnections; i++ {
+		for i := 0; i > NumConnections; i++ {
 			err := h.connections[i].Close()
 			if err != nil {
 				jww.ERROR.Printf("Unable to close connection to %s: %+v",
@@ -369,7 +370,7 @@ func (h *Host) disconnect() {
 // undefined behavior if the caller has not taken the write lock
 func (h *Host) connectHelper() (err error) {
 	wg := sync.WaitGroup{}
-	for i := 0; i < numConnections; i++ {
+	for i := 0; i < NumConnections; i++ {
 		localI := i
 		wg.Add(1)
 		go func() {

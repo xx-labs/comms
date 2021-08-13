@@ -15,7 +15,7 @@ package interconnect
 
 import (
 	context "context"
-	messages "gitlab.com/xx_network/comms/messages"
+	messages "git.xx.network/xx_network/comms/messages"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

@@ -9,7 +9,7 @@ package token
 
 import (
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/crypto/nonce"
+	"git.xx.network/xx_network/crypto/nonce"
 	"sync"
 )
 

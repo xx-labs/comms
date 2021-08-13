@@ -10,7 +10,7 @@ package token
 import (
 	"bytes"
 	"github.com/pkg/errors"
-	"gitlab.com/xx_network/crypto/nonce"
+	"git.xx.network/xx_network/crypto/nonce"
 	"sync"
 )
 

@@ -8,8 +8,8 @@ package signature
 
 import (
 	"crypto/rand"
-	"gitlab.com/xx_network/comms/messages"
-	"gitlab.com/xx_network/crypto/signature/rsa"
+	"git.xx.network/xx_network/comms/messages"
+	"git.xx.network/xx_network/crypto/signature/rsa"
 	"hash"
 	"testing"
 )

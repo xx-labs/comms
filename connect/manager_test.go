@@ -8,8 +8,8 @@
 package connect
 
 import (
-	"gitlab.com/xx_network/comms/testkeys"
-	"gitlab.com/xx_network/primitives/id"
+	"git.xx.network/xx_network/comms/testkeys"
+	"git.xx.network/xx_network/primitives/id"
 	"google.golang.org/grpc"
 	"math"
 	"net"

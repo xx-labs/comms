@@ -13,7 +13,7 @@ import (
 	"bytes"
 	"fmt"
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/primitives/id"
+	"git.xx.network/xx_network/primitives/id"
 	"sync"
 	"testing"
 	"time"

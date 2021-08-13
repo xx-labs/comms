@@ -8,7 +8,7 @@
 package token
 
 import (
-	nonce2 "gitlab.com/xx_network/crypto/nonce"
+	nonce2 "git.xx.network/xx_network/crypto/nonce"
 	"testing"
 )
 

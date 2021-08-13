@@ -8,7 +8,7 @@ package signature
 
 import (
 	"crypto/rand"
-	"gitlab.com/xx_network/crypto/signature/ec"
+	"git.xx.network/xx_network/crypto/signature/ec"
 	"testing"
 )
 

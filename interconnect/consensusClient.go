@@ -14,8 +14,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/comms/connect"
-	"gitlab.com/xx_network/comms/messages"
+	"git.xx.network/xx_network/comms/connect"
+	"git.xx.network/xx_network/comms/messages"
 	"google.golang.org/grpc"
 )
 

@@ -9,7 +9,7 @@ package connect
 
 import (
 	"errors"
-	"gitlab.com/xx_network/primitives/id"
+	"git.xx.network/xx_network/primitives/id"
 	"strings"
 )
 

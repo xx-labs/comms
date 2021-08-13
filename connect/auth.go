@@ -18,10 +18,10 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/comms/connect/token"
-	pb "gitlab.com/xx_network/comms/messages"
-	"gitlab.com/xx_network/crypto/signature/rsa"
-	"gitlab.com/xx_network/primitives/id"
+	"git.xx.network/xx_network/comms/connect/token"
+	pb "git.xx.network/xx_network/comms/messages"
+	"git.xx.network/xx_network/crypto/signature/rsa"
+	"git.xx.network/xx_network/primitives/id"
 	"google.golang.org/grpc/metadata"
 )
 

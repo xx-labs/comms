@@ -11,7 +11,7 @@ package interconnect
 
 import (
 	"context"
-	"gitlab.com/xx_network/comms/messages"
+	"git.xx.network/xx_network/comms/messages"
 )
 
 func (c *CMixServer) GetNDF(ctx context.Context, ping *messages.Ping) (*NDF, error) {

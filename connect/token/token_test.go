@@ -9,7 +9,7 @@ package token
 
 import (
 	"bytes"
-	nonce2 "gitlab.com/xx_network/crypto/nonce"
+	nonce2 "git.xx.network/xx_network/crypto/nonce"
 	"reflect"
 	"testing"
 )

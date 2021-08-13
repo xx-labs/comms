@@ -10,7 +10,7 @@ package connect
 import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/pkg/errors"
-	"gitlab.com/xx_network/primitives/id"
+	"git.xx.network/xx_network/primitives/id"
 	"google.golang.org/grpc"
 	"testing"
 )

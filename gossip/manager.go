@@ -12,9 +12,9 @@ package gossip
 import (
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/comms/connect"
-	"gitlab.com/xx_network/crypto/csprng"
-	"gitlab.com/xx_network/primitives/id"
+	"git.xx.network/xx_network/comms/connect"
+	"git.xx.network/xx_network/crypto/csprng"
+	"git.xx.network/xx_network/primitives/id"
 	"sync"
 	"time"
 )

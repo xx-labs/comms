@@ -10,9 +10,9 @@ import (
 	"crypto"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/comms/messages"
-	"gitlab.com/xx_network/crypto/csprng"
-	"gitlab.com/xx_network/crypto/signature/ec"
+	"git.xx.network/xx_network/comms/messages"
+	"git.xx.network/xx_network/crypto/csprng"
+	"git.xx.network/xx_network/crypto/signature/ec"
 	"hash"
 )
 

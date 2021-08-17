@@ -320,7 +320,8 @@ func (h *Host) connectHelper() (err error) {
 	var securityDial grpc.DialOption
 	if h.credentials != nil {
 		// Create the gRPC client with TLS
-		securityDial = grpc.WithTransportCredentials(h.credentials)
+		//securityDial = grpc.WithTransportCredentials(h.credentials)
+		securityDial = grpc.WithInsecure()
 	} else {
 		// Create the gRPC client without TLS
 		jww.WARN.Printf("Connecting to %v without TLS!", h.GetAddress())

@@ -158,8 +158,9 @@ listen:
 
 		// Create the gRPC server with TLS
 		jww.INFO.Printf("Starting server with TLS...")
-		creds := credentials.NewServerTLSFromCert(&x509cert)
-		pc.LocalServer = grpc.NewServer(grpc.Creds(creds),
+		//creds := credentials.NewServerTLSFromCert(&x509cert)
+		pc.LocalServer = grpc.NewServer(
+			//grpc.Creds(creds),
 			grpc.MaxConcurrentStreams(MaxConcurrentStreams),
 			grpc.MaxRecvMsgSize(math.MaxInt32),
 			grpc.KeepaliveParams(KaOpts),

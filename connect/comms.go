@@ -179,7 +179,7 @@ listen:
 			grpc.KeepaliveParams(KaOpts),
 			grpc.KeepaliveEnforcementPolicy(KaEnforcement))
 	} else {
-		jww.FATAL.Panicf("TLS cannot be disabled in production, only for testing suites!")
+		jww.FATAL.Panicf("TLS cannot be disabled in production (StartCommServer), only for testing suites!")
 	}
 
 	return pc, lis, nil

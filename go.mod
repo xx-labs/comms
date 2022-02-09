@@ -16,7 +16,7 @@ require (
 require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/zeebo/blake3 v0.1.1 // indirect
+	github.com/zeebo/blake3 v0.2.2 // indirect
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220208230804-65c12eb4c068 // indirect

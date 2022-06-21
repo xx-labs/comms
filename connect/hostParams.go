@@ -80,5 +80,6 @@ func GetDefaultHostParams() HostParams {
 			// For all connections, with and without streaming
 			PermitWithoutStream: true,
 		},
+		ProxyErrorMetricParams: exponential.DefaultMovingAvgParams(),
 	}
 }

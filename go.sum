@@ -83,10 +83,6 @@ gitlab.com/xx_network/primitives v0.0.0-20200803231956-9b192c57ea7c/go.mod h1:wt
 gitlab.com/xx_network/primitives v0.0.0-20200804183002-f99f7a7284da/go.mod h1:OK9xevzWCaPO7b1wiluVJGk7R5ZsuC7pHY5hteZFQug=
 gitlab.com/xx_network/primitives v0.0.2/go.mod h1:cs0QlFpdMDI6lAo61lDRH2JZz+3aVkHy+QogOB6F/qc=
 gitlab.com/xx_network/primitives v0.0.4-0.20220222211843-901fa4a2d72b/go.mod h1:9imZHvYwNFobxueSvVtHneZLk9wTK7HQTzxPm+zhFhE=
-gitlab.com/xx_network/primitives v0.0.4-0.20220621212901-e3eb697853b7 h1:mh5Q2e1oowd6ugTcevxmby01ljNPh3N7vD1C/OJ3muA=
-gitlab.com/xx_network/primitives v0.0.4-0.20220621212901-e3eb697853b7/go.mod h1:AXVVFt7dDAeIUpOGPiStCcUIKsBXLWbmV/BgZ4T+tOo=
-gitlab.com/xx_network/primitives v0.0.4-0.20220621213746-982268059f66 h1:SuouIE2yYEhz86YeDtRna/+xWMp5lOkTgPwFuKpIN3k=
-gitlab.com/xx_network/primitives v0.0.4-0.20220621213746-982268059f66/go.mod h1:AXVVFt7dDAeIUpOGPiStCcUIKsBXLWbmV/BgZ4T+tOo=
 gitlab.com/xx_network/primitives v0.0.4-0.20220622174900-f31728465f87 h1:O2OpHO+OoVMpYe7ffm7CS3WOvqBhqoOONziZuquPIqM=
 gitlab.com/xx_network/primitives v0.0.4-0.20220622174900-f31728465f87/go.mod h1:AXVVFt7dDAeIUpOGPiStCcUIKsBXLWbmV/BgZ4T+tOo=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

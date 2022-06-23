@@ -276,7 +276,9 @@ func (h *Host) transmit(f func(conn *grpc.ClientConn) (interface{},
 		if !h.isExcludedMetricError(err.Error()) {
 			h.metrics.incrementErrors()
 		}
+	}
 
+	if err != nil {
 		// Check if the received error is a connection timeout and add it to the
 		// moving average. If the cutoff is reached for too many timeouts,
 		// return TooManyProxyError instead so that the host can be removed from

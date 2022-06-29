@@ -283,10 +283,10 @@ func (h *Host) transmit(f func(conn *grpc.ClientConn) (interface{},
 		// moving average. If the cutoff is reached for too many timeouts,
 		// return TooManyProxyError instead so that the host can be removed from
 		// the host pool on the layer above.
-		err = h.proxyErrorMetric.Intake(
+		err2 := h.proxyErrorMetric.Intake(
 			exponential.BoolToFloat(strings.Contains(err.Error(), ProxyError)))
-		if err == nil {
-			err = errors.Errorf("%s: %+v", TooManyProxyError, err)
+		if err2 != nil {
+			err = errors.Errorf("%s: %+v", TooManyProxyError, err2)
 		}
 	}
 

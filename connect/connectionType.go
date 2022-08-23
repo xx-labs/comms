@@ -10,6 +10,8 @@
 
 package connect
 
+// This file is only compiled for all architectures except WebAssembly.
+
 // GetDefaultConnectionType returns Grpc as the default connection type when
 // compiling for all architectures except WebAssembly.
 func GetDefaultConnectionType() ConnectionType {

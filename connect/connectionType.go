@@ -5,12 +5,11 @@
 // LICENSE file                                                              //
 ///////////////////////////////////////////////////////////////////////////////
 
+// This file is only compiled for all architectures except WebAssembly.
 //go:build !js || !wasm
 // +build !js !wasm
 
 package connect
-
-// This file is only compiled for all architectures except WebAssembly.
 
 // GetDefaultConnectionType returns Grpc as the default connection type when
 // compiling for all architectures except WebAssembly.

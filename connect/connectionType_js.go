@@ -5,9 +5,9 @@
 // LICENSE file                                                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-package connect
-
 // This file is only compiled for WebAssembly.
+
+package connect
 
 // GetDefaultConnectionType returns Web as the default connection type when
 // compiling for WebAssembly.

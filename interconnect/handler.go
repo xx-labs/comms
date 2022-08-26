@@ -67,6 +67,7 @@ func StartCMixInterconnect(id *id.ID, port string, handler ServerHandler,
 type CMixServer struct {
 	*connect.ProtoComms
 	handler ServerHandler
+	*UnimplementedInterconnectServer
 }
 
 // Handler for CMix -> consensus

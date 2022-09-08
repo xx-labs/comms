@@ -208,11 +208,7 @@ func (wc *webConn) IsOnline() (time.Duration, bool) {
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	if _, err = client.Do(req); err != nil {
 		jww.TRACE.Printf("(GO error): %s", err.Error())
-
-		// TODO: Get more exception strings for major browsers
-		var re = regexp.MustCompile(
-			"exceeded while awaiting|ssl|cors|invalid|protocol")
-		if re.MatchString(strings.ToLower(err.Error())) {
+		if checkErrorExceptions(err) {
 			jww.DEBUG.Printf(
 				"Web connectivity verified for address %s with error %+v",
 				addr, err)
@@ -224,4 +220,13 @@ func (wc *webConn) IsOnline() (time.Duration, bool) {
 	}
 	client.CloseIdleConnections()
 	return time.Since(start), true
+}
+
+// checkErrorExceptions checks if the error matches any of the exceptions.
+func checkErrorExceptions(err error) bool {
+	// TODO: Get more exception strings for major browsers
+	var re = regexp.MustCompile(
+		"exceeded while awaiting|ssl|cors|invalid|protocol")
+
+	return re.MatchString(strings.ToLower(err.Error()))
 }

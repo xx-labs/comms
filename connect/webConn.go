@@ -182,7 +182,7 @@ func (wc *webConn) IsOnline() (time.Duration, bool) {
 		Transport: tr,
 		Timeout:   wc.h.params.PingTimeout,
 	}
-	target := "http://" + addr
+	target := "https://" + addr
 	req, err := http.NewRequest("GET", target, nil)
 	if err != nil {
 		jww.WARN.Printf("Failed to initiate request: %+v", err)

@@ -76,6 +76,7 @@ func TestWebConnection(t *testing.T) {
 	t.Log(resp.Error)
 }
 
+// TODO: Re-enable once HTTPS is supported
 // func TestWebConnection_TLS(t *testing.T) {
 // 	addr := "0.0.0.0:11421"
 //

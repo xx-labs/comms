@@ -225,9 +225,12 @@ func (c *ProtoComms) ServeWithWeb() {
 
 	// Split netListener into two distinct listeners for GRPC and HTTP
 	mux := cmux.New(c.netListener)
-	grpcL := mux.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings(
-		"content-type", "application/grpc"))
-	httpL := mux.Match(cmux.Any())
+	grpcMatcher := cmux.TLS()
+	if TestingOnlyDisableTLS {
+		grpcMatcher = cmux.Any()
+	}
+	grpcL := mux.Match(grpcMatcher)
+	httpL := mux.Match(cmux.HTTP1())
 
 	listenHTTP := func(l net.Listener) {
 		jww.INFO.Printf("Starting HTTP listener on GRPC endpoints: %+v",
@@ -284,8 +287,8 @@ func (c *ProtoComms) ServeWithWeb() {
 		}
 		jww.INFO.Printf("Shutting down port server listener")
 	}
-	go listenGRPC(grpcL)
 	go listenHTTP(httpL)
+	go listenGRPC(grpcL)
 	go listenPort()
 }
 

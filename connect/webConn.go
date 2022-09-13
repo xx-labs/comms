@@ -67,10 +67,12 @@ func (wc *webConn) IsWeb() bool {
 // Note that until the downstream repo is fixed, this doesn't actually
 // establish a connection past creating the http object.
 func (wc *webConn) connectWebHelper() (err error) {
-	// Configure TLS options
-	jww.DEBUG.Printf("Connecting to %s without TLS!", wc.h.GetAddress())
-	securityDial := []grpcweb.DialOption{grpcweb.WithInsecure()}
 
+	// FIXME: Currently only HTTP is used. This must be fixed to use HTTPS
+	//  before production use.
+	// Configure TLS options
+	jww.WARN.Printf("Connecting to %s without TLS!", wc.h.GetAddress())
+	securityDial := []grpcweb.DialOption{grpcweb.WithInsecure()}
 	// var securityDial []grpcweb.DialOption
 	// if wc.h.credentials != nil {
 	// 	securityDial = []grpcweb.DialOption{grpcweb.WithTlsCertificate(wc.h.certificate)}
@@ -98,7 +100,7 @@ func (wc *webConn) connectWebHelper() (err error) {
 		if backoffTime > 15000 {
 			backoffTime = 15000
 		}
-		//ctx, cancel := newContext(time.Duration(backoffTime) * time.Millisecond)
+		// ctx, cancel := newContext(time.Duration(backoffTime) * time.Millisecond)
 
 		dialOpts := []grpcweb.DialOption{
 			grpcweb.WithIdleConnTimeout(wc.h.params.WebParams.IdleConnTimeout),
@@ -108,11 +110,11 @@ func (wc *webConn) connectWebHelper() (err error) {
 		}
 		dialOpts = append(dialOpts, securityDial...)
 
-		//windowSize := atomic.LoadInt32(wc.h.windowSize)
-		//if windowSize != 0 {
+		// windowSize := atomic.LoadInt32(wc.h.windowSize)
+		// if windowSize != 0 {
 		//	dialOpts = append(dialOpts, grpc.WithInitialWindowSize(windowSize))
 		//	dialOpts = append(dialOpts, grpc.WithInitialConnWindowSize(windowSize))
-		//}
+		// }
 
 		// Create the connection
 		wc.connection, err = grpcweb.DialContext(wc.h.GetAddress(),
@@ -122,7 +124,7 @@ func (wc *webConn) connectWebHelper() (err error) {
 			jww.DEBUG.Printf("Attempt number %+v to connect to %s failed\n",
 				numRetries, wc.h.GetAddress())
 		}
-		//cancel()
+		// cancel()
 	}
 
 	// Verify that the connection was established successfully

@@ -71,7 +71,8 @@ func (wc *webConn) connectWebHelper() (err error) {
 	// FIXME: Currently only HTTP is used. This must be fixed to use HTTPS
 	//  before production use.
 	// Configure TLS options
-	jww.WARN.Printf("Connecting to %s without TLS!", wc.h.GetAddress())
+	jww.WARN.Printf("grpcWeb connecting to %s without TLS! This is insecure "+
+		"and should only be used for testing.", wc.h.GetAddress())
 	securityDial := []grpcweb.DialOption{grpcweb.WithInsecure()}
 	// var securityDial []grpcweb.DialOption
 	// if wc.h.credentials != nil {

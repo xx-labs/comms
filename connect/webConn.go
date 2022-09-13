@@ -83,15 +83,15 @@ func (wc *webConn) connectWebHelper() (err error) {
 	// 	jww.FATAL.Panicf(tlsError)
 	// }
 
-	jww.DEBUG.Printf("Attempting to establish connection to %s using"+
-		" credentials: %+v", wc.h.GetAddress(), securityDial)
+	jww.DEBUG.Printf("Attempting to establish connection to %s using "+
+		"credentials: %v", wc.h.GetAddress(), securityDial)
 
 	// Attempt to establish a new connection
 	var numRetries uint32
 	for numRetries = 0; numRetries < wc.h.params.MaxRetries && !wc.isAlive(); numRetries++ {
 		wc.h.disconnect()
 
-		jww.DEBUG.Printf("Connecting to %+v Attempt number %+v of %+v",
+		jww.DEBUG.Printf("Connecting to %s Attempt number %d of %d",
 			wc.h.GetAddress(), numRetries, wc.h.params.MaxRetries)
 
 		// If timeout is enabled, the max wait time becomes
@@ -117,11 +117,10 @@ func (wc *webConn) connectWebHelper() (err error) {
 		// }
 
 		// Create the connection
-		wc.connection, err = grpcweb.DialContext(wc.h.GetAddress(),
-			dialOpts...)
+		wc.connection, err = grpcweb.DialContext(wc.h.GetAddress(), dialOpts...)
 
 		if err != nil {
-			jww.DEBUG.Printf("Attempt number %+v to connect to %s failed\n",
+			jww.DEBUG.Printf("Attempt number %d to connect to %s failed",
 				numRetries, wc.h.GetAddress())
 		}
 		// cancel()
@@ -135,7 +134,7 @@ func (wc *webConn) connectWebHelper() (err error) {
 	}
 
 	// Add the successful connection to the Manager
-	jww.INFO.Printf("Successfully connected to %v", wc.h.GetAddress())
+	jww.INFO.Printf("Successfully connected to %s", wc.h.GetAddress())
 	return
 }
 

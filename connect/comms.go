@@ -236,6 +236,7 @@ func (c *ProtoComms) ServeWithWeb() {
 		httpServer := grpcweb.WrapServer(grpcServer,
 			grpcweb.WithOriginFunc(func(origin string) bool { return true }))
 		// This blocks for the lifetime of the listener.
+		jww.WARN.Printf("Starting HTTP server to without TLS!")
 		if err := http.Serve(l, httpServer); err != nil {
 			// Cannot panic here due to shared net.Listener
 			jww.ERROR.Printf("Failed to serve HTTP: %+v", err)
@@ -244,6 +245,7 @@ func (c *ProtoComms) ServeWithWeb() {
 		// FIXME: Currently only HTTP is used. This must be fixed to use HTTPS
 		//  before production use.
 		// if TestingOnlyDisableTLS && c.privateKey == nil {
+		//  jww.WARN.Printf("Starting HTTP server to without TLS!")
 		// 	if err := http.Serve(l, httpServer); err != nil {
 		// 		// Cannot panic here due to shared net.Listener
 		// 		jww.ERROR.Printf("Failed to serve HTTP: %+v", err)

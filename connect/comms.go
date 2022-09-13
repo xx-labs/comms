@@ -238,10 +238,11 @@ func (c *ProtoComms) ServeWithWeb() {
 		if TestingOnlyDisableTLS && c.privateKey == nil {
 			if err := http.Serve(l, httpServer); err != nil {
 				// Cannot panic here due to shared net.Listener
-				jww.ERROR.Printf("Failed to serve HTTP: %v", err)
+				jww.ERROR.Printf("Failed to serve HTTP: %+v", err)
 			}
 		} else {
-			// Configure tls for this listener, using the config from http.ServeTLS
+			// Configure TLS for this listener, using the config from
+			// http.ServeTLS
 			tlsConf := &tls.Config{}
 			tlsConf.NextProtos = append(tlsConf.NextProtos, "h2", "http/1.1")
 
@@ -249,19 +250,20 @@ func (c *ProtoComms) ServeWithWeb() {
 			var cert *x509.Certificate
 			cert, err = tlsCreds.LoadCertificate(string(c.pubKeyPem))
 			if err != nil {
-				jww.FATAL.Panicf("failed to load tls certificate: %+v", err)
+				jww.FATAL.Panicf("Failed to load TLS certificate: %+v", err)
 			}
 			tlsConf.ServerName = cert.DNSNames[0]
 
 			tlsConf.Certificates = make([]tls.Certificate, 1)
-			tlsConf.Certificates[0], err = tls.X509KeyPair(c.pubKeyPem, rsa.CreatePrivateKeyPem(c.privateKey))
+			tlsConf.Certificates[0], err = tls.X509KeyPair(
+				c.pubKeyPem, rsa.CreatePrivateKeyPem(c.privateKey))
 			if err != nil {
-				jww.FATAL.Panicf("Failed to load tls key: %+v", err)
+				jww.FATAL.Panicf("Failed to load TLS key: %+v", err)
 			}
 			tlsLis := tls.NewListener(l, tlsConf)
 			if err := http.Serve(tlsLis, httpServer); err != nil {
 				// Cannot panic here due to shared net.Listener
-				jww.ERROR.Printf("Failed to serve HTTP: %v", err)
+				jww.ERROR.Printf("Failed to serve HTTP: %+v", err)
 			}
 		}
 

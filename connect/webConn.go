@@ -2,7 +2,6 @@ package connect
 
 import (
 	"crypto/tls"
-	"fmt"
 	"git.xx.network/elixxir/grpc-web-go-client/grpcweb"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
@@ -69,15 +68,18 @@ func (wc *webConn) IsWeb() bool {
 // establish a connection past creating the http object.
 func (wc *webConn) connectWebHelper() (err error) {
 	// Configure TLS options
-	var securityDial []grpcweb.DialOption
-	if wc.h.credentials != nil {
-		securityDial = []grpcweb.DialOption{grpcweb.WithTlsCertificate(wc.h.certificate)}
-	} else if TestingOnlyDisableTLS {
-		jww.WARN.Printf("Connecting to %v without TLS!", wc.h.GetAddress())
-		securityDial = []grpcweb.DialOption{grpcweb.WithInsecure()}
-	} else {
-		jww.FATAL.Panicf(tlsError)
-	}
+	jww.DEBUG.Printf("Connecting to %s without TLS!", wc.h.GetAddress())
+	securityDial := []grpcweb.DialOption{grpcweb.WithInsecure()}
+
+	// var securityDial []grpcweb.DialOption
+	// if wc.h.credentials != nil {
+	// 	securityDial = []grpcweb.DialOption{grpcweb.WithTlsCertificate(wc.h.certificate)}
+	// } else if TestingOnlyDisableTLS {
+	// 	jww.WARN.Printf("Connecting to %s without TLS!", wc.h.GetAddress())
+	// 	securityDial = []grpcweb.DialOption{grpcweb.WithInsecure()}
+	// } else {
+	// 	jww.FATAL.Panicf(tlsError)
+	// }
 
 	jww.DEBUG.Printf("Attempting to establish connection to %s using"+
 		" credentials: %+v", wc.h.GetAddress(), securityDial)
@@ -126,9 +128,8 @@ func (wc *webConn) connectWebHelper() (err error) {
 	// Verify that the connection was established successfully
 	if !wc.isAlive() {
 		wc.h.disconnect()
-		return errors.New(fmt.Sprintf(
-			"Last try to connect to %s failed. Giving up",
-			wc.h.GetAddress()))
+		return errors.Errorf(
+			"Last try to connect to %s failed. Giving up", wc.h.GetAddress())
 	}
 
 	// Add the successful connection to the Manager

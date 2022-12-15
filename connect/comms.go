@@ -10,6 +10,7 @@
 package connect
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -43,6 +44,7 @@ const tlsHandshakePrefixLen = 5
 // which allows for the disabled TLS code-path. Production
 // code-path will only function with TLS enabled.
 var TestingOnlyDisableTLS = false
+var TestingOnlyInsecureTLSVerify = false
 
 // KaOpts are Keepalive options for servers
 // TODO: Set these via config
@@ -95,7 +97,9 @@ type ProtoComms struct {
 	netListener net.Listener
 
 	// Local network server
-	grpcServer *grpc.Server
+	grpcServer  *grpc.Server
+	httpServer  *http.Server
+	httpsServer *http.Server
 	// GRPC credentials stored to re-initialize after restart
 	grpcCreds tls.Certificate
 	// Parsed grpc x509 certificate for checking incoming tls request servernames
@@ -313,7 +317,12 @@ func (c *ProtoComms) ServeWithWeb() {
 			grpcweb.WithWebsockets(true),
 			grpcweb.WithWebsocketOriginFunc(func(req *http.Request) bool { return true }))
 		jww.WARN.Printf("Starting HTTP server!")
-		if err := http.Serve(l, httpServer); err != nil {
+
+		c.httpServer = &http.Server{
+			Handler: httpServer,
+		}
+
+		if err := c.httpServer.Serve(l); err != nil {
 			// Cannot panic here due to shared net.Listener
 			jww.ERROR.Printf("Failed to serve HTTP: %+v", err)
 		}
@@ -507,7 +516,12 @@ func (c *ProtoComms) ServeHttps(cert, key []byte) error {
 
 		tlsLis := tls.NewListener(l, tlsConf)
 		jww.WARN.Printf("Starting HTTPS server!")
-		if err := http.Serve(tlsLis, httpsServer); err != nil {
+
+		c.httpsServer = &http.Server{
+			Handler: httpsServer,
+		}
+
+		if err := c.httpsServer.Serve(tlsLis); err != nil {
 			// Cannot panic here due to shared net.Listener
 			jww.WARN.Printf("HTTPS listener shutting down: %+v", err)
 		}
@@ -522,13 +536,28 @@ func (c *ProtoComms) ServeHttps(cert, key []byte) error {
 // Shutdown performs a graceful shutdown of the local server.
 func (c *ProtoComms) Shutdown() {
 	// Also handles closing of net.Listener
-	c.grpcServer.GracefulStop()
+	if c.httpsServer != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err := c.httpsServer.Shutdown(ctx)
+		if err != nil {
+			jww.WARN.Printf("Failed to shutdown http server: %+v", err)
+		}
+		cancel()
+	} else if c.httpServer != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err := c.httpServer.Shutdown(ctx)
+		if err != nil {
+			jww.WARN.Printf("Failed to shutdown http server: %+v", err)
+		}
+		cancel()
+	} else {
+		c.grpcServer.GracefulStop()
+	}
+
 	// Close all Manager connections
 	c.DisconnectAll()
 	c.grpcServer = nil
 	c.netListener = nil
-	c.httpsX509 = nil
-	c.grpcX509 = nil
 	c.mux = nil
 	jww.INFO.Printf("Comms server successfully shut down")
 }

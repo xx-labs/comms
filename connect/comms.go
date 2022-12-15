@@ -309,7 +309,9 @@ func (c *ProtoComms) ServeWithWeb() {
 
 	listenHTTP := func(l net.Listener) {
 		httpServer := grpcweb.WrapServer(grpcServer,
-			grpcweb.WithOriginFunc(func(origin string) bool { return true }))
+			grpcweb.WithOriginFunc(func(origin string) bool { return true }),
+			grpcweb.WithWebsockets(true),
+			grpcweb.WithWebsocketOriginFunc(func(req *http.Request) bool { return true }))
 		jww.WARN.Printf("Starting HTTP server!")
 		if err := http.Serve(l, httpServer); err != nil {
 			// Cannot panic here due to shared net.Listener
@@ -484,7 +486,9 @@ func (c *ProtoComms) ServeHttps(cert, key []byte) error {
 		jww.INFO.Printf("Starting HTTP listener on GRPC endpoints: %+v",
 			grpcweb.ListGRPCResources(grpcServer))
 		httpsServer := grpcweb.WrapServer(grpcServer,
-			grpcweb.WithOriginFunc(func(origin string) bool { return true }))
+			grpcweb.WithOriginFunc(func(origin string) bool { return true }),
+			grpcweb.WithWebsockets(true),
+			grpcweb.WithWebsocketOriginFunc(func(req *http.Request) bool { return true }))
 
 		// Configure TLS for this listener, using the config from
 		// http.ServeTLS

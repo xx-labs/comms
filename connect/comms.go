@@ -20,8 +20,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
 	jww "github.com/spf13/jwalterweatherman"
+	"gitlab.com/elixxir/crypto/rsa"
 	"gitlab.com/xx_network/comms/connect/token"
-	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"golang.org/x/crypto/cryptobyte"
 	"google.golang.org/grpc"
@@ -81,7 +81,7 @@ type ProtoComms struct {
 	networkId *id.ID
 
 	// Private key of the local comms instance
-	privateKey *rsa.PrivateKey
+	privateKey rsa.PrivateKey
 
 	// Disables the checking of authentication signatures for testing setups
 	disableAuth bool
@@ -566,7 +566,7 @@ func (c *ProtoComms) String() string {
 
 // Setter for local server's private key
 func (c *ProtoComms) setPrivateKey(data []byte) error {
-	key, err := rsa.LoadPrivateKeyFromPem(data)
+	key, err := rsa.GetScheme().UnmarshalPrivateKeyPEM(data)
 	if err != nil {
 		return errors.Errorf("Failed to form private key file from data at %s: %+v", data, err)
 	}
@@ -576,7 +576,7 @@ func (c *ProtoComms) setPrivateKey(data []byte) error {
 }
 
 // GetPrivateKey is the getter for local server's private key.
-func (c *ProtoComms) GetPrivateKey() *rsa.PrivateKey {
+func (c *ProtoComms) GetPrivateKey() rsa.PrivateKey {
 	return c.privateKey
 }
 

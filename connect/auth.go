@@ -18,9 +18,9 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
+	"gitlab.com/elixxir/crypto/rsa"
 	"gitlab.com/xx_network/comms/connect/token"
 	pb "gitlab.com/xx_network/comms/messages"
-	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"google.golang.org/grpc/metadata"
 )
@@ -319,7 +319,7 @@ func (c *ProtoComms) signMessage(msg proto.Message, recipientID *id.ID) ([]byte,
 	if err != nil {
 		return nil, errors.New(err.Error())
 	}
-	options := rsa.NewDefaultOptions()
+	options := rsa.NewDefaultPSSOptions()
 	hash := options.Hash.New()
 	hash.Write(msgBytes)
 	// Hash in the ID of the intended recipient. This prevents potential
@@ -337,7 +337,7 @@ func (c *ProtoComms) signMessage(msg proto.Message, recipientID *id.ID) ([]byte,
 		return nil, errors.Errorf("Cannot sign message: No private key")
 	}
 	// Sign the message and return the signature
-	signature, err := rsa.Sign(rand.Reader, key, options.Hash, hashed, nil)
+	signature, err := key.SignPSS(rand.Reader, options.Hash, hashed, nil)
 	if err != nil {
 		return nil, errors.New(err.Error())
 	}
@@ -371,7 +371,7 @@ func (c *ProtoComms) verifyMessage(msg proto.Message, signature []byte, host *Ho
 	if err != nil {
 		return errors.New(err.Error())
 	}
-	options := rsa.NewDefaultOptions()
+	options := rsa.NewDefaultPSSOptions()
 	hash := options.Hash.New()
 	hash.Write(msgBytes)
 	// Hash in the ID of the intended recipient. This prevents potential
@@ -384,7 +384,7 @@ func (c *ProtoComms) verifyMessage(msg proto.Message, signature []byte, host *Ho
 	jww.TRACE.Printf("VerifyMessage: Hashed with ID: %v", idToHash)
 
 	// Verify signature of message using host public key
-	err = rsa.Verify(host.rsaPublicKey, options.Hash, hashed, signature, nil)
+	err = host.rsaPublicKey.VerifyPSS(options.Hash, hashed, signature, nil)
 	if err != nil {
 		return errors.New(err.Error())
 	}

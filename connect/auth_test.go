@@ -14,7 +14,6 @@ import (
 	token "gitlab.com/xx_network/comms/connect/token"
 	pb "gitlab.com/xx_network/comms/messages"
 	"gitlab.com/xx_network/comms/testkeys"
-	"gitlab.com/xx_network/crypto/signature/rsa"
 	"gitlab.com/xx_network/primitives/id"
 	"google.golang.org/grpc/peer"
 	"net"
@@ -36,7 +35,7 @@ func TestSignVerify(t *testing.T) {
 	c.networkId = testId
 
 	private := c.GetPrivateKey()
-	pub := private.Public().(*rsa.PublicKey)
+	pub := private.Public()
 
 	message := pb.Ack{
 		Error: "test",

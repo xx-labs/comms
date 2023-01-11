@@ -15,8 +15,8 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
+	"gitlab.com/elixxir/crypto/rsa"
 	"gitlab.com/xx_network/comms/connect/token"
-	"gitlab.com/xx_network/crypto/signature/rsa"
 	tlsCreds "gitlab.com/xx_network/crypto/tls"
 	"gitlab.com/xx_network/primitives/exponential"
 	"gitlab.com/xx_network/primitives/id"
@@ -60,7 +60,7 @@ type Host struct {
 	credentials credentials.TransportCredentials
 
 	// RSA Public Key corresponding to the TLS Certificate
-	rsaPublicKey *rsa.PublicKey
+	rsaPublicKey rsa.PublicKey
 
 	// State tracking for host metric
 	metrics *Metric
@@ -140,7 +140,7 @@ func (h *Host) SetWindowSize(size int32) {
 }
 
 // GetPubKey simple getter for the public key
-func (h *Host) GetPubKey() *rsa.PublicKey {
+func (h *Host) GetPubKey() rsa.PublicKey {
 	return h.rsaPublicKey
 }
 
@@ -373,10 +373,12 @@ func (h *Host) setCredentials() error {
 	}
 
 	// Create the RSA Public Key object
-	h.rsaPublicKey, err = tlsCreds.NewPublicKeyFromPEM(h.certificate)
+	goRsaPubKey, err := tlsCreds.NewPublicKeyFromPEM(h.certificate)
 	if err != nil {
 		err = errors.Errorf("Error extracting PublicKey: %+v", err)
 	}
+
+	h.rsaPublicKey = rsa.GetScheme().ConvertPublic(&goRsaPubKey.PublicKey)
 
 	return err
 }
@@ -397,7 +399,7 @@ func (h *Host) StringVerbose() string {
 	return fmt.Sprintf("%s\t CERTIFICATE: %s", h, h.certificate)
 }
 
-func (h *Host) SetTestPublicKey(key *rsa.PublicKey, t interface{}) {
+func (h *Host) SetTestPublicKey(key rsa.PublicKey, t interface{}) {
 	switch t.(type) {
 	case *testing.T:
 		break

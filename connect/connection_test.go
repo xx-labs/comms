@@ -148,7 +148,6 @@ func TestWebConnection_TLS(t *testing.T) {
 	pc.ServeWithWeb()
 	time.Sleep(time.Second)
 	pc.Shutdown()
-
 	hostParams := GetDefaultHostParams()
 	hostParams.ConnectionType = Web
 	h, err := newHost(hostId, addr, httpsCertBytes, hostParams)

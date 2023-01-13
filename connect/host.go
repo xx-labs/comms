@@ -11,6 +11,7 @@ package connect
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
@@ -117,12 +118,12 @@ func newHost(id *id.ID, address string, cert []byte, params HostParams) (host *H
 	host.UpdateAddress(address)
 
 	// Configure the transport credentials for GRPC hosts
-	if !host.IsWeb() {
-		err = host.setCredentials()
-		if err != nil {
-			return
-		}
+	//if !host.IsWeb() {
+	err = host.setCredentials()
+	if err != nil {
+		return
 	}
+	//}
 
 	// Connect immediately if configured to do so
 	if params.DisableLazyConnection {
@@ -213,6 +214,13 @@ func (h *Host) isExcludedMetricError(err string) bool {
 // IsWeb returns the connection type of the host
 func (h *Host) IsWeb() bool {
 	return h.connection.IsWeb()
+}
+
+// GetRemoteCertificate returns the tls certificate from the server for web hosts
+// Note that this will return an error when used on grpc hosts, and will not
+// have a certificate ready until something has been sent over the connection.
+func (h *Host) GetRemoteCertificate() (*x509.Certificate, error) {
+	return h.connection.GetRemoteCertificate()
 }
 
 // SetMetricsTesting sets the host metrics to an arbitrary value. Used for testing

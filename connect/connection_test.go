@@ -2,6 +2,7 @@ package connect
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"gitlab.com/xx_network/comms/connect/token"
 	pb "gitlab.com/xx_network/comms/messages"
@@ -150,7 +151,7 @@ func TestWebConnection_TLS(t *testing.T) {
 
 	hostParams := GetDefaultHostParams()
 	hostParams.ConnectionType = Web
-	h, err := newHost(hostId, addr, nil, hostParams)
+	h, err := newHost(hostId, addr, httpsCertBytes, hostParams)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +175,11 @@ func TestWebConnection_TLS(t *testing.T) {
 			pb.RegisterGenericServer(pc.grpcServer, &TestGenericServer{resp: expectedResponse})
 
 			pc.ServeWithWeb()
-			err = pc.ServeHttps(httpsCertBytes, httpsKeyBytes)
+			tlsKeypair, err := tls.X509KeyPair(httpsCertBytes, httpsKeyBytes)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = pc.ServeHttps(tlsKeypair)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -187,6 +192,15 @@ func TestWebConnection_TLS(t *testing.T) {
 			err = grpcHost.connect()
 			if err != nil {
 				t.Fatal(err)
+			}
+
+			_, ok := h.IsOnline()
+			if !ok {
+				t.Fatalf("host %s is not online", h.String())
+			}
+			_, ok = grpcHost.IsOnline()
+			if !ok {
+				t.Fatalf("host %s is not online", grpcHost.String())
 			}
 
 			ctx, cancel := grpcHost.GetMessagingContext()
@@ -207,6 +221,11 @@ func TestWebConnection_TLS(t *testing.T) {
 			}
 			if resp.Error != expectedResponse {
 				t.Errorf("Did not receive expected payload")
+			}
+
+			_, err = h.GetRemoteCertificate()
+			if err != nil {
+				t.Errorf("Did not receive cert: %+v", err)
 			}
 
 			pc.Shutdown()
@@ -261,7 +280,11 @@ func TestServeWeb_Matchers(t *testing.T) {
 			hostParams := GetDefaultHostParams()
 			hostParams.ConnectionType = ct
 			pc.ServeWithWeb()
-			err = pc.ServeHttps(httpsCertBytes, httpsKeyBytes)
+			tlsKeypair, err := tls.X509KeyPair(httpsCertBytes, httpsKeyBytes)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = pc.ServeHttps(tlsKeypair)
 			if err != nil {
 				t.Fatal(err)
 			}

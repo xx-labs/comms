@@ -2,7 +2,7 @@ package connect
 
 import (
 	"crypto/tls"
-	"fmt"
+	"crypto/x509"
 	"net/http"
 	"net/http/httptrace"
 	"regexp"
@@ -66,6 +66,11 @@ func (wc *webConn) IsWeb() bool {
 	return true
 }
 
+// GetRemoteCertificate returns the server tls certificate stored by the web connection
+func (wc *webConn) GetRemoteCertificate() (*x509.Certificate, error) {
+	return wc.connection.GetRemoteCertificate()
+}
+
 // connectWebHelper initializes the grpcweb ClientConn object
 // Note that until the downstream repo is fixed, this doesn't actually
 // establish a connection past creating the http object.
@@ -73,9 +78,9 @@ func (wc *webConn) connectWebHelper() (err error) {
 	// Configure TLS options
 	var securityDial []grpcweb.DialOption
 
-	if wc.h.credentials != nil {
-		return errors.New("Web hosts should not have credentials specified")
-	}
+	//if wc.h.credentials != nil {
+	//	return errors.New("Web hosts should not have credentials specified")
+	//}
 
 	if !TestingOnlyDisableTLS {
 		securityDial = []grpcweb.DialOption{grpcweb.WithSecure()}
@@ -183,6 +188,12 @@ func (wc *webConn) isAlive() bool {
 // IsOnline sends an empty http get request to verify the status of the server
 func (wc *webConn) IsOnline() (time.Duration, bool) {
 	addr := wc.h.GetAddress()
+	pingTimeout := wc.h.params.PingTimeout
+
+	return wc.isOnlineHelper(addr, pingTimeout)
+}
+
+func (wc *webConn) isOnlineHelper(addr string, pingTimeout time.Duration) (time.Duration, bool) {
 	start := time.Now()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -191,10 +202,10 @@ func (wc *webConn) IsOnline() (time.Duration, bool) {
 	}
 	client := http.Client{
 		Transport: tr,
-		Timeout:   wc.h.params.PingTimeout,
+		Timeout:   pingTimeout,
 	}
-	target := "http://" + addr
-	req, err := http.NewRequest("GET", target, nil)
+	target := "https://" + addr
+	req, err := http.NewRequest(http.MethodOptions, target, nil)
 	if err != nil {
 		jww.WARN.Printf("Failed to initiate request: %+v", err)
 		return time.Since(start), false
@@ -202,23 +213,21 @@ func (wc *webConn) IsOnline() (time.Duration, bool) {
 
 	trace := &httptrace.ClientTrace{
 		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
-			jww.DEBUG.Printf("DNS Info: %+v\n", dnsInfo)
+			jww.TRACE.Printf("DNS Info: %+v\n", dnsInfo)
 		},
 		GotConn: func(connInfo httptrace.GotConnInfo) {
-			jww.DEBUG.Printf("Got Conn: %+v\n", connInfo)
+			jww.TRACE.Printf("Got Conn: %+v\n", connInfo)
 		},
 		GotFirstResponseByte: func() {
-			jww.DEBUG.Print("Got first byte!")
+			jww.TRACE.Print("Got first byte!")
 		},
 	}
 
 	// IMPORTANT - enables better HTTP(S) discovery, because many browsers block CORS by default.
-	//req.Header.Add("js.fetch:mode", "no-cors")
+	req.Header = wc.addHeaders(req.Header)
 	jww.TRACE.Printf("(GO request): %+v", req)
-
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
-	var resp *http.Response
-	if resp, err = client.Do(req); err != nil {
+	if _, err = client.Do(req); err != nil {
 		jww.TRACE.Printf("(GO error): %s", err.Error())
 		if checkErrorExceptions(err) {
 			jww.DEBUG.Printf(
@@ -230,7 +239,6 @@ func (wc *webConn) IsOnline() (time.Duration, bool) {
 			return time.Since(start), false
 		}
 	}
-	fmt.Println(resp)
 	client.CloseIdleConnections()
 	return time.Since(start), true
 }

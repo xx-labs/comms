@@ -3,7 +3,7 @@ module gitlab.com/xx_network/comms
 go 1.19
 
 require (
-	git.xx.network/elixxir/grpc-web-go-client v0.0.0-20230113173356-72b6dd25209f
+	git.xx.network/elixxir/grpc-web-go-client v0.0.0-20230117150303-26f76d6c1157
 	github.com/golang/protobuf v1.5.2
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/pkg/errors v0.9.1

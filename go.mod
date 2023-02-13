@@ -3,13 +3,13 @@ module gitlab.com/xx_network/comms
 go 1.19
 
 require (
-	git.xx.network/elixxir/grpc-web-go-client v0.0.0-20220824160725-73ff74c9c633
+	git.xx.network/elixxir/grpc-web-go-client v0.0.0-20230213195139-913e760b9cdd
 	github.com/golang/protobuf v1.5.2
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/pkg/errors v0.9.1
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/jwalterweatherman v1.1.0
-	gitlab.com/xx_network/crypto v0.0.5-0.20230126174752-88fe2e52261a
+	gitlab.com/xx_network/crypto v0.0.5-0.20230213194530-577973730e2e
 	gitlab.com/xx_network/primitives v0.0.4-0.20230203173415-81c2cb07da44
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 	golang.org/x/net v0.0.0-20220822230855-b0a4917ee28c

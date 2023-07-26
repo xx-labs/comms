@@ -10,11 +10,9 @@ package connect
 import (
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"google.golang.org/grpc"
 	"strings"
 )
 
-const MaxRetries = 3
 const inCoolDownErr = "Host is in cool down. Cannot connect."
 const lastTryErr = "Last try to connect to"
 
@@ -25,20 +23,28 @@ const lastTryErr = "Last try to connect to"
 // and then do the operation, leaving the host as connected. In a system
 // like the host pool in client, this will cause untracked connections.
 // Given that connections have timeouts, this is a minor issue
-func (c *ProtoComms) transmit(host *Host, f func(conn *grpc.ClientConn) (interface{},
+func (c *ProtoComms) transmit(host *Host, f func(conn Connection) (interface{},
 	error)) (result interface{}, err error) {
 
 	if host.GetAddress() == "" {
 		return nil, errors.New("Host address is blank, host might be receive only.")
 	}
 
-	for numRetries := 0; numRetries < MaxRetries; numRetries++ {
+	for numRetries := uint32(0); numRetries < host.params.MaxRetries; numRetries++ {
 		err = nil
 		//reconnect if necessary
 		host.connectionMux.RLock()
 		connected, connectionCount := host.connectedUnsafe()
 		if !connected {
 			host.connectionMux.RUnlock()
+
+			// if auto-connect is not enable, return an error because
+			// we cannot connect and we cannot send to a disconnected
+			// host
+			if host.params.DisableAutoConnect {
+				return nil, errors.Errorf("Cannot send to a disconnected" +
+					"host when AutoConnect is disabled")
+			}
 			host.connectionMux.Lock()
 			connectionCount, err = c.connect(host, connectionCount)
 			host.connectionMux.Unlock()
@@ -48,17 +54,23 @@ func (c *ProtoComms) transmit(host *Host, f func(conn *grpc.ClientConn) (interfa
 					return nil, err
 				}
 				jww.WARN.Printf("Failed to connect to Host on attempt "+
-					"%v/%v : %s", numRetries+1, MaxRetries, err)
+					"%v/%v : %s", numRetries+1, host.params.MaxSendRetries, err)
 				continue
 			}
 			host.connectionMux.RLock()
 		}
 
-		//transmit
-		result, err = host.transmit(f)
+		// TODO: this is a temporary fix for xx-4337 (segfault in invoke)
+		// Should be removed once the root cause is addressed
+		if !host.IsWeb() && host.connection.GetGrpcConn() == nil {
+			err = errors.New("Cannot send; connection is nil")
+		} else {
+			//transmit
+			result, err = host.transmit(f)
+		}
 		host.connectionMux.RUnlock()
 
-		// if the transmission goes well or it is a domain specific error, return
+		// if the transmission goes well or if it is a domain specific error, return
 		if err == nil || !(isConnError(err) || IsAuthError(err)) {
 			return result, err
 		}
@@ -66,7 +78,7 @@ func (c *ProtoComms) transmit(host *Host, f func(conn *grpc.ClientConn) (interfa
 		host.conditionalDisconnect(connectionCount)
 		host.connectionMux.Unlock()
 		jww.WARN.Printf("Failed to send to Host on attempt %v/%v: %+v",
-			numRetries+1, MaxRetries, err)
+			numRetries+1, host.params.MaxSendRetries, err)
 	}
 
 	return nil, err
@@ -89,7 +101,7 @@ func (c *ProtoComms) connect(host *Host, count uint64) (uint64, error) {
 	}
 
 	//if the connection is alive return, it is possible for another transmission
-	//to connect between releasing the read lock and taking the write lick
+	//to connect between releasing the read lock and taking the write lock
 	if !host.isAlive() {
 		//connect to host
 		jww.INFO.Printf("Host %s not connected, attempting to connect...",
